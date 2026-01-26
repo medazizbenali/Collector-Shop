@@ -1,0 +1,39 @@
+### Health Check
+GET http://localhost:8004/health
+
+### Get Cart (requires JWT token)
+GET http://localhost:8004/cart
+Authorization: Bearer YOUR_JWT_TOKEN_HERE
+
+### Add Item to Cart
+POST http://localhost:8004/cart/add
+Authorization: Bearer YOUR_JWT_TOKEN_HERE
+Content-Type: application/json
+
+{
+  "articleId": "article-123",
+  "quantity": 2,
+  "price": 29.99,
+  "articleData": {
+    "title": "Vintage Comic Book",
+    "image": "https://example.com/image.jpg",
+    "sellerId": "seller-456"
+  }
+}
+
+### Update Cart Item Quantity
+PUT http://localhost:8004/cart/items/ITEM_ID_HERE
+Authorization: Bearer YOUR_JWT_TOKEN_HERE
+Content-Type: application/json
+
+{
+  "quantity": 5
+}
+
+### Remove Item from Cart
+DELETE http://localhost:8004/cart/items/ITEM_ID_HERE
+Authorization: Bearer YOUR_JWT_TOKEN_HERE
+
+### Clear Cart
+DELETE http://localhost:8004/cart/clear
+Authorization: Bearer YOUR_JWT_TOKEN_HERE
