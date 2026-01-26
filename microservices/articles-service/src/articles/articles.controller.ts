@@ -50,14 +50,26 @@ export class ArticlesController {
   @UseGuards(JwtAuthGuard)
   async getMyArticles(@Query() filterDto: FilterArticleDto, @Req() req: Request) {
     const user = req.user as any;
-    console.log('🔍🔍🔍 [my-articles] ROUTE CALLED!');
-    console.log('🔍 [my-articles] User:', JSON.stringify(user));
+    console.log('\n\n=================================');
+    console.log('🔍🔍🔍 [my-articles] ROUTE CALLED AT:', new Date().toISOString());
+    console.log('🔍 [my-articles] Full Request Headers:', JSON.stringify(req.headers, null, 2));
+    console.log('🔍 [my-articles] User Object:', JSON.stringify(user, null, 2));
     console.log('🔍 [my-articles] User ID:', user.id);
-    console.log('🔍 [my-articles] Filter:', JSON.stringify(filterDto));
+    console.log('🔍 [my-articles] Filter DTO:', JSON.stringify(filterDto, null, 2));
+    console.log('🔍 [my-articles] Query Params:', JSON.stringify(req.query, null, 2));
+    console.log('=================================\n');
 
     const result = await this.articlesService.findAll({ ...filterDto, sellerId: user.id });
-    console.log('🔍 [my-articles] Result:', { total: result.total, articlesCount: result.articles.length });
-    console.log('🔍 [my-articles] Articles:', JSON.stringify(result.articles.map(a => ({ id: a.id, title: a.title, status: a.status }))));
+
+    console.log('\n=================================');
+    console.log('🔍 [my-articles] Service Result:', { total: result.total, articlesCount: result.articles.length });
+    console.log('🔍 [my-articles] Articles Details:', JSON.stringify(result.articles.map(a => ({
+      id: a.id,
+      title: a.title,
+      status: a.status,
+      sellerId: a.sellerId
+    })), null, 2));
+    console.log('=================================\n\n');
 
     return {
       message: 'My articles retrieved successfully',

@@ -1,0 +1,140 @@
+version: '3.8'
+
+services:
+  # Base de données Auth
+  postgres-auth:
+    image: postgres:15-alpine
+    container_name: postgres-auth
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: collector_auth
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-auth-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Base de données Articles
+  postgres-articles:
+    image: postgres:15-alpine
+    container_name: postgres-articles
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: collector_articles
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-articles-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Base de données Shops
+  postgres-shops:
+    image: postgres:15-alpine
+    container_name: postgres-shops
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: collector_shops
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres-shops-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Auth Service
+  auth-service:
+    build:
+      context: ./microservices/auth-service
+      dockerfile: Dockerfile
+    container_name: auth-service
+    ports:
+      - "8001:8001"
+    environment:
+      - PORT=8001
+      - DATABASE_HOST=postgres-auth
+      - DATABASE_PORT=5432
+      - DATABASE_USER=postgres
+      - DATABASE_PASSWORD=postgres
+      - DATABASE_NAME=collector_auth
+      - JWT_SECRET=your-secret-key-change-in-production
+      - JWT_EXPIRES_IN=7d
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GOOGLE_CALLBACK_URL=http://localhost:8001/auth/google/callback
+      - FRONTEND_URL=http://localhost:3002
+    depends_on:
+      postgres-auth:
+        condition: service_healthy
+    volumes:
+      - ./microservices/auth-service:/app
+      - /app/node_modules
+    command: npm run start:dev
+
+  # Articles Service
+  articles-service:
+    build:
+      context: ./microservices/articles-service
+      dockerfile: Dockerfile
+    container_name: articles-service
+    ports:
+      - "8002:8002"
+    environment:
+      - PORT=8002
+      - DATABASE_HOST=postgres-articles
+      - DATABASE_PORT=5432
+      - DATABASE_USER=postgres
+      - DATABASE_PASSWORD=postgres
+      - DATABASE_NAME=collector_articles
+      - JWT_SECRET=your-secret-key-change-in-production
+      - FRONTEND_URL=http://localhost:3002
+    depends_on:
+      postgres-articles:
+        condition: service_healthy
+    volumes:
+      - ./microservices/articles-service:/app
+      - /app/node_modules
+    command: npm run start:dev
+
+  # Shops Service
+  shops-service:
+    build:
+      context: ./microservices/shops-service
+      dockerfile: Dockerfile
+    container_name: shops-service
+    ports:
+      - "8005:8005"
+    environment:
+      - PORT=8005
+      - DATABASE_HOST=postgres-shops
+      - DATABASE_PORT=5432
+      - DATABASE_USER=postgres
+      - DATABASE_PASSWORD=postgres
+      - DATABASE_NAME=collector_shops
+      - JWT_SECRET=your-secret-key-change-in-production
+      - FRONTEND_URL=http://localhost:3002
+    depends_on:
+      postgres-shops:
+        condition: service_healthy
+    volumes:
+      - ./microservices/shops-service:/app
+      - /app/node_modules
+    command: npm run start:dev
+
+volumes:
+  postgres-auth-data:
+  postgres-articles-data:
+  postgres-shops-data:

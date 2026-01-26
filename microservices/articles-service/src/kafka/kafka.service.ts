@@ -10,9 +10,17 @@ export class KafkaService implements OnModuleInit, OnModuleDestroy {
   constructor(private configService: ConfigService) {}
 
   async onModuleInit() {
+    const kafkaBrokers = this.configService.get('KAFKA_BROKERS');
+
+    // Skip Kafka if not configured
+    if (!kafkaBrokers) {
+      console.log('⚠️  Kafka not configured, skipping initialization');
+      return;
+    }
+
     this.kafka = new Kafka({
       clientId: this.configService.get('SERVICE_NAME') || 'articles-service',
-      brokers: this.configService.get('KAFKA_BROKERS').split(','),
+      brokers: kafkaBrokers.split(','),
     });
 
     this.producer = this.kafka.producer();
@@ -26,10 +34,18 @@ export class KafkaService implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleDestroy() {
-    await this.producer.disconnect();
+    if (this.producer) {
+      await this.producer.disconnect();
+    }
   }
 
   async publishEvent(topic: string, event: any) {
+    // Skip if Kafka is not initialized
+    if (!this.producer) {
+      console.log(`⚠️  Kafka not available, skipping event publish to ${topic}:`, event.eventType);
+      return;
+    }
+
     try {
       await this.producer.send({
         topic,

@@ -136,9 +136,23 @@ class ArticlesApi {
   async getMyArticles(params: FilterParams = {}): Promise<ArticlesResponse> {
     console.log('🌐 [articlesApi] Calling /articles/my-articles with params:', params);
     console.log('🌐 [articlesApi] Base URL:', articlesClient.defaults.baseURL);
-    const response = await articlesClient.get('/articles/my-articles', { params });
+
+    // Add timestamp to prevent caching
+    const paramsWithTimestamp = { ...params, _t: Date.now() };
+
+    const response = await articlesClient.get('/articles/my-articles', {
+      params: paramsWithTimestamp,
+      headers: {
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+      }
+    });
+
     console.log('🌐 [articlesApi] Response status:', response.status);
+    console.log('🌐 [articlesApi] Response headers:', response.headers);
     console.log('🌐 [articlesApi] Response data:', response.data);
+    console.log('🌐 [articlesApi] Full response:', JSON.stringify(response.data, null, 2));
+
     const { data, meta } = response.data;
     return {
       articles: data || [],

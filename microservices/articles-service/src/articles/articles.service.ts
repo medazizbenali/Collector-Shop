@@ -54,6 +54,8 @@ export class ArticlesService {
       sortOrder = 'DESC',
     } = filterDto;
 
+    console.log('\n🔎 [ArticlesService.findAll] Starting query with filters:', JSON.stringify(filterDto, null, 2));
+
     const query = this.articleRepository.createQueryBuilder('article')
       .leftJoinAndSelect('article.category', 'category');
 
@@ -62,51 +64,76 @@ export class ArticlesService {
         '(article.title LIKE :search OR article.description LIKE :search OR article.brand LIKE :search)',
         { search: `%${search}%` }
       );
+      console.log('🔎 [ArticlesService.findAll] Applied search filter:', search);
     }
 
     if (categoryId) {
       query.andWhere('article.categoryId = :categoryId', { categoryId });
+      console.log('🔎 [ArticlesService.findAll] Applied categoryId filter:', categoryId);
     }
 
     if (sellerId) {
       query.andWhere('article.sellerId = :sellerId', { sellerId });
+      console.log('🔎 [ArticlesService.findAll] Applied sellerId filter:', sellerId);
     }
 
     if (shopId) {
       query.andWhere('article.shopId = :shopId', { shopId });
+      console.log('🔎 [ArticlesService.findAll] Applied shopId filter:', shopId);
     }
 
     if (condition) {
       query.andWhere('article.condition = :condition', { condition });
+      console.log('🔎 [ArticlesService.findAll] Applied condition filter:', condition);
     }
 
     if (status) {
       query.andWhere('article.status = :status', { status });
+      console.log('🔎 [ArticlesService.findAll] Applied status filter:', status);
     } else if (!sellerId && !shopId) {
       // Par défaut, ne montrer que les articles approuvés SEULEMENT si on ne filtre pas par sellerId ou shopId
       // Si on filtre par sellerId (mes articles) ou shopId (articles de la boutique), on montre tous les statuts
       query.andWhere('article.status = :status', { status: ArticleStatus.APPROVED });
+      console.log('🔎 [ArticlesService.findAll] Applied default APPROVED filter (no sellerId/shopId)');
+    } else {
+      console.log('🔎 [ArticlesService.findAll] No status filter (sellerId or shopId present, showing all statuses)');
     }
 
     if (minPrice !== undefined) {
       query.andWhere('article.price >= :minPrice', { minPrice });
+      console.log('🔎 [ArticlesService.findAll] Applied minPrice filter:', minPrice);
     }
 
     if (maxPrice !== undefined) {
       query.andWhere('article.price <= :maxPrice', { maxPrice });
+      console.log('🔎 [ArticlesService.findAll] Applied maxPrice filter:', maxPrice);
     }
 
     if (brand) {
       query.andWhere('article.brand = :brand', { brand });
+      console.log('🔎 [ArticlesService.findAll] Applied brand filter:', brand);
     }
 
+    // Log the generated SQL
+    const sql = query.getSql();
+    console.log('🔎 [ArticlesService.findAll] Generated SQL:', sql);
+    console.log('🔎 [ArticlesService.findAll] Query parameters:', query.getParameters());
+
     const total = await query.getCount();
+    console.log('🔎 [ArticlesService.findAll] Total count:', total);
 
     query.orderBy(`article.${sortBy}`, sortOrder);
     query.skip((page - 1) * limit);
     query.take(limit);
 
     const articles = await query.getMany();
+    console.log('🔎 [ArticlesService.findAll] Articles retrieved:', articles.length);
+    console.log('🔎 [ArticlesService.findAll] Articles data:', JSON.stringify(articles.map(a => ({
+      id: a.id,
+      title: a.title,
+      status: a.status,
+      sellerId: a.sellerId
+    })), null, 2));
 
     return { articles, total };
   }
