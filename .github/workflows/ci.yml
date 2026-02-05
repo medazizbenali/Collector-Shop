@@ -92,9 +92,18 @@ jobs:
         run: |
           docker build -t collector-front:ci -f frontend/Dockerfile frontend
 
-           - name: Build backend image
+          - name: Build backend images (compose)
         run: |
-          docker build -t collector-back:ci -f microservices/auth-service/Dockerfile microservices/auth-service
+          docker compose -f docker-compose.microservices.yml build
+
+      - name: Get auth-service image id
+        shell: bash
+        run: |
+          set -e
+          IMG="$(docker images --format '{{.Repository}}:{{.Tag}}' | grep -E 'auth-service' | head -n 1)"
+          echo "AUTH_IMAGE=$IMG" >> $GITHUB_ENV
+          echo "Detected backend image: $IMG"
+
 
 
       - name: Trivy scan - frontend
@@ -105,10 +114,10 @@ jobs:
           exit-code: "1"
           severity: "CRITICAL,HIGH"
 
-      - name: Trivy scan - backend
+       - name: Trivy scan - backend (auth-service)
         uses: aquasecurity/trivy-action@0.24.0
         with:
-          image-ref: "collector-back:ci"
+          image-ref: "${{ env.AUTH_IMAGE }}"
           format: "table"
           exit-code: "1"
           severity: "CRITICAL,HIGH"
