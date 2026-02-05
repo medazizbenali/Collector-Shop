@@ -5,6 +5,14 @@ import Navigation from '@/components/Navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { UserRole } from '@/types/user.types';
 import { authClient, shopsClient } from '@/lib/api';
+import axios from "axios";
+
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+if (!API_URL) {
+  throw new Error("NEXT_PUBLIC_API_URL is not defined");
+}
 
 interface User {
   id: string;
